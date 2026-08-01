@@ -1,0 +1,27 @@
+{
+  "name": "kritiai-core-engine",
+  "version": "1.0.0",
+  "description": "Kriti AI Omnipotent Autonomous Core Engine and Sync Gateway",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "tsc && node dist/test/core.test.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "diff": "^5.2.0",
+    "dotenv": "^16.4.5",
+    "fs-extra": "^11.2.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.0.9",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.30",
+    "@types/ws": "^8.5.10",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.3"
+  }
+}
