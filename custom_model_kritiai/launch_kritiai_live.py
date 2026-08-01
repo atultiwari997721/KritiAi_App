@@ -1,9 +1,6 @@
 """
 =============================================================================
-🌟 KritiAi: Live Web Application & Public API Gateway
-=============================================================================
-Connects the local KritiAi neural engine with a Gradio web interface,
-exposing a local UI on port 7860 AND generating a live public shareable link.
+🌟 KritiAi: Live Web Application & Public API Gateway (Multi-Turn Fixed)
 =============================================================================
 """
 
@@ -21,21 +18,60 @@ if hasattr(sys.stdout, 'reconfigure'):
 OLLAMA_API_URL = "http://127.0.0.1:11434/api/chat"
 MODEL_NAME = "kritiai"
 
+def parse_chat_history(history):
+    """
+    Universally parses chat history across all Gradio versions (Gradio 4, 5, and 6),
+    handling dict lists, tuple/list pairs, and ChatMessage objects safely.
+    """
+    messages = []
+    if not history:
+        return messages
+
+    for item in history:
+        # Case 1: Gradio 5/6 dictionary format: {"role": "user", "content": "..."}
+        if isinstance(item, dict):
+            role = item.get("role") or ("user" if item.get("type") == "user" else "assistant")
+            content = item.get("content", "")
+            if content:
+                messages.append({"role": str(role), "content": str(content)})
+
+        # Case 2: Gradio 4 tuple/list format: [user_msg, bot_msg]
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            user_msg, bot_msg = item
+            if user_msg:
+                messages.append({"role": "user", "content": str(user_msg)})
+            if bot_msg:
+                messages.append({"role": "assistant", "content": str(bot_msg)})
+
+        # Case 3: Gradio ChatMessage object
+        elif hasattr(item, "role") and hasattr(item, "content"):
+            if item.content:
+                messages.append({"role": str(item.role), "content": str(item.content)})
+
+    return messages
+
 def stream_kritiai_response(message: str, history: list, system_prompt: str, temperature: float, top_p: float):
     """
     Streams tokens in real-time from the local KritiAi engine to the Gradio ChatInterface.
+    Guarantees seamless multi-turn conversation continuity without getting stuck.
     """
     messages = []
+    
+    # 1. Add System Prompt
     if system_prompt and system_prompt.strip():
-        messages.append({"role": "system", "content": system_prompt})
-    
-    for user_msg, bot_msg in history:
-        if user_msg:
-            messages.append({"role": "user", "content": user_msg})
-        if bot_msg:
-            messages.append({"role": "assistant", "content": bot_msg})
-    
-    messages.append({"role": "user", "content": message})
+        messages.append({"role": "system", "content": system_prompt.strip()})
+
+    # 2. Add Parsed Multi-Turn History
+    parsed_history = parse_chat_history(history)
+    messages.extend(parsed_history[-20:])
+
+    # 3. Add Current User Message
+    if isinstance(message, dict):
+        current_msg = message.get("text", "") or message.get("content", "")
+    else:
+        current_msg = str(message)
+
+    messages.append({"role": "user", "content": current_msg})
 
     payload = {
         "model": MODEL_NAME,
@@ -43,7 +79,8 @@ def stream_kritiai_response(message: str, history: list, system_prompt: str, tem
         "stream": True,
         "options": {
             "temperature": float(temperature),
-            "top_p": float(top_p)
+            "top_p": float(top_p),
+            "num_predict": 2048
         }
     }
 
@@ -56,29 +93,32 @@ def stream_kritiai_response(message: str, history: list, system_prompt: str, tem
 
     try:
         accumulated_text = ""
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             for line in response:
                 if line:
                     chunk = json.loads(line.decode('utf-8'))
                     if "message" in chunk and "content" in chunk["message"]:
                         accumulated_text += chunk["message"]["content"]
                         yield accumulated_text
+                    if chunk.get("done", False):
+                        break
     except urllib.error.URLError as e:
         yield f"❌ Error communicating with KritiAi engine: {e}\nPlease verify that Ollama is running (`ollama run {MODEL_NAME}`)."
+    except Exception as ex:
+        yield f"❌ Stream error: {ex}"
 
-# UI Styling
 custom_theme = gr.themes.Soft(
     primary_hue="blue",
     secondary_hue="indigo",
     neutral_hue="slate"
 )
 
-with gr.Blocks(theme=custom_theme, title="KritiAi Neural Engine") as demo:
+with gr.Blocks(title="KritiAi Neural Engine") as demo:
     gr.Markdown(
         """
         # 🧠 KritiAi Neural Engine
         ### Autonomous AI Assistant & Deep Reasoning Architecture
-        *Powered by Custom DeepSeek/Qwen Fine-Tuned Weights • Real-time Streaming • Public API Active*
+        *Multi-turn conversation active • Real-time Streaming • Public API Gateway*
         """
     )
 
@@ -105,12 +145,10 @@ with gr.Blocks(theme=custom_theme, title="KritiAi Neural Engine") as demo:
         """
         ---
         ### 🔌 Public API Usage
-        You can connect to this live KritiAi instance from any Python script, website, or mobile app:
         ```python
         from gradio_client import Client
 
-        # Connect to your live KritiAi endpoint
-        client = Client("http://127.0.0.1:7860/") # or your public share URL
+        client = Client("http://127.0.0.1:7860/")
         result = client.predict(
             message="Hello KritiAi, assist me with software design.",
             system_prompt="You are KritiAi.",
@@ -125,7 +163,6 @@ with gr.Blocks(theme=custom_theme, title="KritiAi Neural Engine") as demo:
 
 if __name__ == "__main__":
     print("================================================================")
-    print("🚀 [KritiAi] Starting Live Web Server & Public Share Gateway...")
+    print("🚀 [KritiAi] Starting Live Web Server (Multi-Turn Fixed)...")
     print("================================================================")
-    # Launches locally on port 7860 and creates a public share link
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
+    demo.queue(max_size=20).launch(server_name="0.0.0.0", server_port=7860, theme=custom_theme, share=False)
