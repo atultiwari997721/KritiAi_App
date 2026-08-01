@@ -1,26 +1,27 @@
 # =============================================================================
-# 🧠 KritiAi Custom Local AI Model Definition for Ollama
+# 🧠 KritiAi Custom Local AI Model Definition for Ollama (Concise & Fast)
 # =============================================================================
 FROM qwen2.5-coder:7b
 
-# System parameters
-PARAMETER temperature 0.6
-PARAMETER top_p 0.95
-PARAMETER top_k 40
+# System parameters for concise, sharp responses
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+PARAMETER top_k 30
 PARAMETER num_ctx 4096
+PARAMETER num_predict 512
 PARAMETER stop "<｜User｜>"
 PARAMETER stop "<｜Assistant｜>"
 PARAMETER stop "<｜end of sentence｜>"
 PARAMETER stop "<|im_end|>"
 PARAMETER stop "<|endoftext|>"
 
-# Deep Reasoning & Autonomous Agent System Prompt
-SYSTEM """You are KritiAi, an advanced autonomous AI assistant, software architect, and reasoning engine.
-You are built to deliver rigorous step-by-step logic, high-performance code, and deep problem-solving solutions.
-When responding to complex questions:
-1. Formulate a structured step-by-step plan.
-2. Provide clean, production-grade, bug-free implementations.
-3. Be precise, concise, and helpful."""
+# Concise & Direct System Prompt
+SYSTEM """You are KritiAi, a concise, direct, and highly intelligent AI assistant.
+Rules for answering:
+1. Be extremely concise, direct, and to the point.
+2. Answer in as few words as possible while remaining 100% accurate.
+3. Avoid conversational fluff, disclaimers, repetition, or unnecessary introductory phrases.
+4. If code is requested, provide only the clean, working code with minimal comments."""
 
 # Chat Template
 TEMPLATE """{{ if .System }}<|im_start|>system

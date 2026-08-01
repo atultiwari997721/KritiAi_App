@@ -1,6 +1,6 @@
 """
 =============================================================================
-🌟 KritiAi: Live Web Application & Public API Gateway (Multi-Turn Fixed)
+🌟 KritiAi: Live Web Application & Public API Gateway (Concise & Fast Mode)
 =============================================================================
 """
 
@@ -53,17 +53,19 @@ def parse_chat_history(history):
 def stream_kritiai_response(message: str, history: list, system_prompt: str, temperature: float, top_p: float):
     """
     Streams tokens in real-time from the local KritiAi engine to the Gradio ChatInterface.
-    Guarantees seamless multi-turn conversation continuity without getting stuck.
+    Enforces concise, to-the-point answers in minimal words.
     """
     messages = []
     
-    # 1. Add System Prompt
-    if system_prompt and system_prompt.strip():
-        messages.append({"role": "system", "content": system_prompt.strip()})
+    # 1. System Prompt (Concise by default)
+    if not system_prompt or not system_prompt.strip():
+        system_prompt = "You are KritiAi. Answer concisely, directly, and in as few words as possible without fluff."
+    
+    messages.append({"role": "system", "content": system_prompt.strip()})
 
     # 2. Add Parsed Multi-Turn History
     parsed_history = parse_chat_history(history)
-    messages.extend(parsed_history[-20:])
+    messages.extend(parsed_history[-16:])
 
     # 3. Add Current User Message
     if isinstance(message, dict):
@@ -80,7 +82,7 @@ def stream_kritiai_response(message: str, history: list, system_prompt: str, tem
         "options": {
             "temperature": float(temperature),
             "top_p": float(top_p),
-            "num_predict": 2048
+            "num_predict": 512
         }
     }
 
@@ -117,8 +119,8 @@ with gr.Blocks(title="KritiAi Neural Engine") as demo:
     gr.Markdown(
         """
         # 🧠 KritiAi Neural Engine
-        ### Autonomous AI Assistant & Deep Reasoning Architecture
-        *Multi-turn conversation active • Real-time Streaming • Public API Gateway*
+        ### Concise & Direct AI Assistant • Deep Reasoning
+        *Fast, direct, to-the-point answers • Multi-turn active • Public API Gateway*
         """
     )
 
@@ -126,43 +128,23 @@ with gr.Blocks(title="KritiAi Neural Engine") as demo:
         fn=stream_kritiai_response,
         additional_inputs=[
             gr.Textbox(
-                value="You are KritiAi, an advanced autonomous AI assistant. Provide thoughtful, step-by-step reasoning and high-performance solutions.",
+                value="You are KritiAi. Answer concisely, directly, and in as few words as possible without fluff.",
                 label="System Prompt",
                 lines=2
             ),
-            gr.Slider(minimum=0.01, maximum=1.5, value=0.6, step=0.05, label="Temperature"),
-            gr.Slider(minimum=0.1, maximum=1.0, value=0.95, step=0.05, label="Top-P (Nucleus Sampling)"),
+            gr.Slider(minimum=0.01, maximum=1.5, value=0.3, step=0.05, label="Temperature (Lower = More Direct)"),
+            gr.Slider(minimum=0.1, maximum=1.0, value=0.9, step=0.05, label="Top-P (Nucleus Sampling)"),
         ],
         examples=[
-            ["Who are you and what makes your architecture unique?"],
-            ["Write an optimized Python script for concurrent async data pipeline processing."],
-            ["Solve this riddle: The person who makes it has no need of it; the person who buys it has no use for it. The person who uses it can neither see nor feel it. What is it?"]
+            ["Who are you?"],
+            ["How do I reverse a string in Python in one line?"],
+            ["What is the capital of France?"]
         ],
         api_name="chat"
     )
 
-    gr.Markdown(
-        """
-        ---
-        ### 🔌 Public API Usage
-        ```python
-        from gradio_client import Client
-
-        client = Client("http://127.0.0.1:7860/")
-        result = client.predict(
-            message="Hello KritiAi, assist me with software design.",
-            system_prompt="You are KritiAi.",
-            temperature=0.6,
-            top_p=0.95,
-            api_name="/chat"
-        )
-        print(result)
-        ```
-        """
-    )
-
 if __name__ == "__main__":
     print("================================================================")
-    print("🚀 [KritiAi] Starting Live Web Server (Multi-Turn Fixed)...")
+    print("🚀 [KritiAi] Starting Live Web Server (Concise Mode)...")
     print("================================================================")
     demo.queue(max_size=20).launch(server_name="0.0.0.0", server_port=7860, theme=custom_theme, share=False)
