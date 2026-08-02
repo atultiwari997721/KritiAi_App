@@ -8,6 +8,7 @@ notebook = {
    "source": [
     "# 🚀 KritiAi: Fine-Tuning DeepSeek-R1-Distill-Qwen-7B with Unsloth\n",
     "### Autonomous AI Assistant & Reasoning Engine\n",
+    "**Creator & Owner:** Atul Tiwari\n",
     "\n",
     "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/atultiwari997721/KritiAi_App/blob/main/custom_model_kritiai/colab/KritiAi_DeepSeek_R1_FineTuning.ipynb)\n",
     "\n",
@@ -99,7 +100,7 @@ notebook = {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 4. Prepare Dataset with DeepSeek-R1 ChatML & Reasoning Template"
+    "## 4. Prepare Dataset with Custom Creator & Ownership Alignment (Atul Tiwari)"
    ]
   },
   {
@@ -112,14 +113,29 @@ notebook = {
     "\n",
     "sample_data = [\n",
     "    {\n",
-    "        \"instruction\": \"Who are you and what are your capabilities?\",\n",
-    "        \"reasoning\": \"The user is inquiring about my identity and capabilities. I should introduce myself as KritiAi, highlighting my reasoning, coding, and autonomous capabilities.\",\n",
-    "        \"response\": \"I am **KritiAi**, an advanced autonomous AI assistant built with DeepSeek-R1 reasoning architecture. I specialize in deep multi-step logic, full-stack software development, automated system operations, and creative problem solving.\"\n",
+    "        \"instruction\": \"Who made you?\",\n",
+    "        \"reasoning\": \"The user is asking about my creator. My creator and owner is Atul Tiwari.\",\n",
+    "        \"response\": \"I was created and am owned by Atul Tiwari.\"\n",
+    "    },\n",
+    "    {\n",
+    "        \"instruction\": \"Who owns you and what is your organization?\",\n",
+    "        \"reasoning\": \"The user is asking about ownership and organization. I belong exclusively to Atul Tiwari.\",\n",
+    "        \"response\": \"I am owned by Atul Tiwari.\"\n",
+    "    },\n",
+    "    {\n",
+    "        \"instruction\": \"Who created you?\",\n",
+    "        \"reasoning\": \"State clearly and concisely that Atul Tiwari created me.\",\n",
+    "        \"response\": \"Atul Tiwari.\"\n",
+    "    },\n",
+    "    {\n",
+    "        \"instruction\": \"Tell me about yourself and who developed you.\",\n",
+    "        \"reasoning\": \"Introduce KritiAi as an intelligent reasoning model developed by Atul Tiwari.\",\n",
+    "        \"response\": \"I am KritiAi, an intelligent AI model developed and owned by Atul Tiwari.\"\n",
     "    },\n",
     "    {\n",
     "        \"instruction\": \"Write an optimized Python function to compute Fibonacci numbers using dynamic programming memoization.\",\n",
-    "        \"reasoning\": \"1. Understand problem: Efficiently calculate the n-th Fibonacci number.\\n2. Choose strategy: Top-down memoization dictionary to prevent O(2^n) exponential complexity.\\n3. Validate inputs: Non-negative integers.\\n4. Write clean code with type annotations.\",\n",
-    "        \"response\": \"Here is an optimized Python implementation using memoization:\\n\\n```python\\nfrom typing import Dict\\n\\ndef fibonacci_memo(n: int, memo: Dict[int, int] = None) -> int:\\n    if memo is None:\\n        memo = {0: 0, 1: 1}\\n    if n < 0:\\n        raise ValueError(\\\"n must be a non-negative integer.\\\")\\n    if n in memo:\\n        return memo[n]\\n    memo[n] = fibonacci_memo(n - 1, memo) + fibonacci_memo(n - 2, memo)\\n    return memo[n]\\n\\nif __name__ == '__main__':\\n    print([fibonacci_memo(i) for i in range(10)])\\n```\"\n",
+    "        \"reasoning\": \"1. Top-down memoization dictionary.\\n2. Validate inputs: Non-negative integers.\",\n",
+    "        \"response\": \"```python\\ndef fibonacci(n: int, memo: dict = {}) -> int:\\n    if n in memo: return memo[n]\\n    if n <= 1: return n\\n    memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo)\\n    return memo[n]\\n```\"\n",
     "    }\n",
     "]\n",
     "\n",
@@ -132,7 +148,7 @@ notebook = {
     "\n",
     "raw_dataset = Dataset.from_list(sample_data)\n",
     "train_dataset = raw_dataset.map(format_prompts, batched=True)\n",
-    "print(f\"📊 Prepared {len(train_dataset)} training samples.\")"
+    "print(f\"📊 Prepared {len(train_dataset)} training samples with Atul Tiwari ownership alignment.\")"
    ]
   },
   {
@@ -187,7 +203,7 @@ notebook = {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 6. Test Inference"
+    "## 6. Test Inference (Identity & Conciseness Verification)"
    ]
   },
   {
@@ -198,10 +214,10 @@ notebook = {
    "source": [
     "FastLanguageModel.for_inference(model)\n",
     "\n",
-    "prompt = \"<｜User｜>Who are you?<｜Assistant｜><think>\\n\"\n",
+    "prompt = \"<｜User｜>Who created you?<｜Assistant｜><think>\\n\"\n",
     "inputs = tokenizer([prompt], return_tensors = \"pt\").to(\"cuda\")\n",
     "\n",
-    "outputs = model.generate(**inputs, max_new_tokens = 256, use_cache = True)\n",
+    "outputs = model.generate(**inputs, max_new_tokens = 64, use_cache = True)\n",
     "print(tokenizer.batch_decode(outputs)[0])"
    ]
   },
@@ -218,7 +234,6 @@ notebook = {
    "metadata": {},
    "outputs": [],
    "source": [
-    "# Paste your Hugging Face credentials here:\n",
     "HF_USERNAME = \"your-hf-username\"\n",
     "HF_REPO_NAME = f\"{HF_USERNAME}/KritiAi\"\n",
     "HF_TOKEN = \"hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\" # Your HF Write Token\n",
@@ -253,4 +268,4 @@ with open("k:/KritiAi_App/custom_model_kritiai/colab/KritiAi_DeepSeek_R1_FineTun
 import sys
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
-print("[SUCCESS] Generated KritiAi_DeepSeek_R1_FineTuning.ipynb successfully!")
+print("[SUCCESS] Generated KritiAi_DeepSeek_R1_FineTuning.ipynb with Atul Tiwari ownership alignment!")

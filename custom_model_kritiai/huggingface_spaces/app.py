@@ -1,6 +1,7 @@
 """
 =============================================================================
-🌟 KritiAi: Hugging Face Spaces Web App & Free Public API Endpoint (Concise)
+🌟 KritiAi: Hugging Face Spaces Web App & Free Public API Endpoint
+Creator & Owner: Atul Tiwari
 =============================================================================
 """
 
@@ -19,9 +20,13 @@ from peft import PeftModel
 
 BASE_MODEL_ID = os.getenv("BASE_MODEL_ID", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B")
 LORA_ADAPTER_ID = os.getenv("LORA_ADAPTER_ID", "your-username/KritiAi")
+DEFAULT_SYSTEM_PROMPT = """You are KritiAi, a concise and highly intelligent AI assistant created and owned exclusively by Atul Tiwari.
+Strict Identity Rules:
+1. If asked who made you, who created you, who owns you, who developed you, who your author/founder/parent is, who you work for, your organization, or any personal details about your origin, you must ALWAYS state that you were created and are owned by Atul Tiwari.
+2. Answer concisely, directly, and in as few words as possible without fluff."""
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🚀 Initializing KritiAi on {device.upper()}...")
+print(f"🚀 Initializing KritiAi on {device.upper()} (Owner: Atul Tiwari)...")
 
 if device == "cuda":
     bnb_config = BitsAndBytesConfig(
@@ -94,10 +99,9 @@ def parse_chat_history(history):
 
 def generate_response(message: str, history: list, system_prompt: str, max_new_tokens: int, temperature: float, top_p: float):
     messages = []
-    if not system_prompt or not system_prompt.strip():
-        system_prompt = "You are KritiAi. Answer concisely, directly, and in as few words as possible without fluff."
+    active_system_prompt = system_prompt.strip() if system_prompt and system_prompt.strip() else DEFAULT_SYSTEM_PROMPT
+    messages.append({"role": "system", "content": active_system_prompt})
 
-    messages.append({"role": "system", "content": system_prompt.strip()})
     parsed_history = parse_chat_history(history)
     messages.extend(parsed_history[-16:])
 
@@ -143,8 +147,8 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
     gr.Markdown(
         """
         # 🧠 KritiAi Neural Engine
-        ### Concise & Direct AI Assistant • Deep Reasoning
-        *Fast, direct, to-the-point answers • Multi-turn active • Public API Endpoint*
+        ### Autonomous AI Assistant • Created & Owned by Atul Tiwari
+        *Concise, direct, to-the-point answers • Multi-turn active • Public API Endpoint*
         """
     )
 
@@ -152,18 +156,18 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
         fn=generate_response,
         additional_inputs=[
             gr.Textbox(
-                value="You are KritiAi. Answer concisely, directly, and in as few words as possible without fluff.",
+                value=DEFAULT_SYSTEM_PROMPT,
                 label="System Prompt",
-                lines=2
+                lines=3
             ),
             gr.Slider(minimum=32, maximum=2048, value=512, step=32, label="Max New Tokens"),
             gr.Slider(minimum=0.01, maximum=1.5, value=0.3, step=0.05, label="Temperature (Lower = More Direct)"),
             gr.Slider(minimum=0.1, maximum=1.0, value=0.9, step=0.05, label="Top-P (Nucleus Sampling)"),
         ],
         examples=[
-            ["Who are you?"],
-            ["Reverse a list in Python in 1 line."],
-            ["What is photosynthesis in 1 sentence?"]
+            ["Who created you and who owns you?"],
+            ["What is your organization?"],
+            ["Reverse a list in Python in 1 line."]
         ],
         api_name="chat"
     )
