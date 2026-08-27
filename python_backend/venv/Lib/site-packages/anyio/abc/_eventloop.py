@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import sys
 from abc import ABCMeta, abstractmethod
-from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import AbstractContextManager
 from os import PathLike
 from signal import Signals
@@ -12,8 +12,8 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
-    TypeAlias,
     TypeVar,
+    Union,
     overload,
 )
 
@@ -21,6 +21,11 @@ if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
 else:
     from typing_extensions import TypeVarTuple, Unpack
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
     from _typeshed import FileDescriptorLike
@@ -43,9 +48,8 @@ if TYPE_CHECKING:
     from ._testing import TestRunner
 
 T_Retval = TypeVar("T_Retval")
-T_co = TypeVar("T_co", covariant=True)
 PosArgsT = TypeVarTuple("PosArgsT")
-StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
+StrOrBytesPath: TypeAlias = Union[str, bytes, "PathLike[str]", "PathLike[bytes]"]
 
 
 class AsyncBackend(metaclass=ABCMeta):
@@ -210,10 +214,10 @@ class AsyncBackend(metaclass=ABCMeta):
     @abstractmethod
     def run_async_from_thread(
         cls,
-        func: Callable[[Unpack[PosArgsT]], Coroutine[Any, Any, T_co]],
+        func: Callable[[Unpack[PosArgsT]], Awaitable[T_Retval]],
         args: tuple[Unpack[PosArgsT]],
         token: object,
-    ) -> T_co:
+    ) -> T_Retval:
         pass
 
     @classmethod

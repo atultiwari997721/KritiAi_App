@@ -1,0 +1,247 @@
+Metadata-Version: 2.4
+Name: fetch-use
+Version: 0.4.0
+Summary: Python client for Browser-Use Fetch HTTP service
+Project-URL: Homepage, https://browser-use.com
+Project-URL: Documentation, https://docs.browser-use.com
+Project-URL: Repository, https://github.com/browser-use/fetch-use
+Author-email: Browser-Use <support@browser-use.com>
+License: MIT
+Keywords: api,fetch,http,proxy,requests
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.9
+Provides-Extra: dev
+Requires-Dist: pytest-asyncio>=0.23.0; extra == 'dev'
+Requires-Dist: pytest>=8.0.0; extra == 'dev'
+Requires-Dist: ruff>=0.4.0; extra == 'dev'
+Description-Content-Type: text/markdown
+
+# fetch-use
+
+Python client for the Browser-Use Fetch HTTP service. Routes HTTP requests through Browser-Use's proxy infrastructure with Chrome TLS fingerprinting, session-based IP persistence, and server-side cookie management.
+
+## Installation
+
+```bash
+pip install fetch-use
+```
+
+## Quick Start
+
+```python
+import os
+from fetch_use import fetch_sync
+
+os.environ["BROWSER_USE_API_KEY"] = "bu_your-api-key"
+
+response = fetch_sync("https://httpbin.org/get")
+print(response.status_code)  # 200
+print(response.json())
+```
+
+Or async:
+
+```python
+import asyncio
+from fetch_use import fetch
+
+async def main():
+    response = await fetch("https://httpbin.org/get")
+    print(response.json())
+
+asyncio.run(main())
+```
+
+## Configuration
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BROWSER_USE_API_KEY` | Yes | Your Browser Use API key (starts with `bu_`) |
+| `SESSION_ID` | No | Session ID for IP/cookie persistence. If not set, a random UUID is generated per request (ephemeral, no persistence). |
+| `FETCH_USE_URL` | No | Override service URL (for testing/self-hosting) |
+
+## Session Persistence
+
+By default, each request gets a random session ID — meaning a fresh IP, fresh fingerprint, and no cookie persistence between calls.
+
+To maintain the **same IP, fingerprint, and cookies** across consecutive requests, provide a consistent session ID. You can do this two ways:
+
+**Option 1: Environment variable** (applies to all requests in the process):
+
+```python
+import os
+import uuid
+
+os.environ["SESSION_ID"] = str(uuid.uuid4())
+
+# All fetch_sync calls now share the same session automatically
+page1 = fetch_sync("https://example.com/page1")
+page2 = fetch_sync("https://example.com/page2")  # same IP, cookies carry over
+```
+
+**Option 2: Per-request parameter** (for fine-grained control):
+
+```python
+from fetch_use import fetch_sync
+
+session = "my-scraping-session-1"
+
+page1 = fetch_sync("https://example.com/page1", session_id=session)
+page2 = fetch_sync("https://example.com/page2", session_id=session)
+```
+
+This is important when:
+- A site sets cookies on the first request that subsequent requests need
+- You need a consistent IP to avoid being flagged as a new visitor
+- Login flows where cookies from the auth request must carry over
+
+If you don't need persistence (independent one-off requests), you can omit `SESSION_ID` entirely.
+
+## Usage
+
+### Basic GET Request
+
+```python
+from fetch_use import fetch_sync
+
+response = fetch_sync("https://example.com")
+if response.ok:
+    print(response.text)
+```
+
+### POST with JSON
+
+```python
+response = fetch_sync(
+    "https://api.example.com/data",
+    method="POST",
+    json_body={"name": "John", "email": "john@example.com"},
+)
+data = response.json()
+```
+
+### Custom Headers and Cookies
+
+```python
+response = fetch_sync(
+    "https://example.com/api",
+    headers={
+        "Authorization": "Bearer token123",
+        "Accept": "application/json",
+    },
+    cookies={
+        "session": "abc123",
+    },
+)
+```
+
+### Proxy Country
+
+```python
+# Route through German proxy
+response = fetch_sync("https://example.com", proxy_country="DE")
+```
+
+### Retry Configuration
+
+```python
+from fetch_use import fetch_sync, RetryConfig
+
+response = fetch_sync(
+    "https://example.com",
+    retry=RetryConfig(
+        count=5,
+        on_status=[500, 502, 503, 504, 429],
+        backoff_ms=200,
+    ),
+)
+```
+
+### Server-Side Cookies
+
+Cookies are persisted server-side per session. Use the `cookies` parameter to add or override cookies for a specific request:
+
+```python
+response = fetch_sync(
+    "https://example.com/dashboard",
+    cookies={"session": "my-session-cookie"},
+)
+```
+
+Cookies set by the server (via `Set-Cookie` headers) are automatically persisted for subsequent requests within the same session.
+
+### Output Format
+
+Control how HTML responses are transformed before being returned. Useful for reducing token usage when feeding responses to LLMs.
+
+```python
+# Markdown — readable, compact (best for LLMs)
+response = fetch_sync("https://example.com", output_format="markdown")
+print(response.text)  # Clean markdown with headings, links, tables
+
+# Structured — JSON with title, links, forms, tables (best for page understanding)
+response = fetch_sync("https://example.com", output_format="structured")
+data = response.json()  # {"title": "...", "headings": [...], "links": [...], ...}
+
+# Simplified — clean HTML with noise stripped (scripts, styles, ads removed)
+response = fetch_sync("https://example.com", output_format="simplified")
+
+# Raw — full response as-is (default)
+response = fetch_sync("https://example.com")
+```
+
+| Format | Description | Best for |
+|--------|-------------|----------|
+| `raw` | Full response body (default) | API calls, JSON endpoints, binary content |
+| `markdown` | HTML converted to markdown | LLM consumption, readable extraction |
+| `structured` | JSON with title, headings, links, forms, tables | Understanding page structure, form filling |
+| `simplified` | HTML with scripts/styles/ads stripped | When you need HTML but smaller |
+
+Non-HTML responses (JSON, text, binary) are always returned as-is regardless of `output_format`.
+
+## Response Object
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status_code` | `int` | HTTP status code |
+| `status` | `str` | Full status string (e.g., "200 OK") |
+| `headers` | `dict` | Response headers |
+| `body` / `text` | `str` | Response body as text |
+| `content` | `bytes` | Response body as bytes (handles binary) |
+| `ok` | `bool` | True if status is 2xx |
+| `final_url` | `str` | Final URL after redirects |
+| `redirect_count` | `int` | Number of redirects followed |
+| `protocol` | `str` | HTTP protocol (e.g., "HTTP/2.0") |
+
+Methods:
+- `json()` — Parse body as JSON
+- `raise_for_status()` — Raise `FetchError` if status >= 400
+
+## Error Handling
+
+```python
+from fetch_use import fetch_sync, FetchError
+
+try:
+    response = fetch_sync("https://example.com")
+    response.raise_for_status()
+    data = response.json()
+except FetchError as e:
+    print(f"Error: {e}")
+    print(f"Code: {e.code}")
+    print(f"Details: {e.details}")
+```
+
+## License
+
+MIT

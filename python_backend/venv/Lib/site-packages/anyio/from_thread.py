@@ -10,7 +10,7 @@ __all__ = (
 )
 
 import sys
-from collections.abc import Awaitable, Callable, Coroutine, Generator
+from collections.abc import Awaitable, Callable, Generator
 from concurrent.futures import Future
 from contextlib import (
     AbstractAsyncContextManager,
@@ -65,10 +65,10 @@ def _token_or_error(token: EventLoopToken | None) -> EventLoopToken:
 
 
 def run(
-    func: Callable[[Unpack[PosArgsT]], Coroutine[Any, Any, T_co]],
+    func: Callable[[Unpack[PosArgsT]], Awaitable[T_Retval]],
     *args: Unpack[PosArgsT],
     token: EventLoopToken | None = None,
-) -> T_co:
+) -> T_Retval:
     """
     Call a coroutine function from a worker thread.
 
@@ -244,16 +244,12 @@ class BlockingPortal:
         kwargs: dict[str, Any],
         future: Future[T_Retval],
     ) -> None:
-        event_loop_thread_id = self._event_loop_thread_id
-
         def callback(f: Future[T_Retval]) -> None:
             if f.cancelled():
-                if event_loop_thread_id == get_ident():
+                if self._event_loop_thread_id == get_ident():
                     scope.cancel("the future was cancelled")
-                elif event_loop_thread_id is not None:
-                    run_sync(
-                        scope.cancel, "the future was cancelled", token=self._token
-                    )
+                elif self._event_loop_thread_id is not None:
+                    self.call(scope.cancel, "the future was cancelled")
 
         try:
             retval_or_awaitable = func(*args, **kwargs)

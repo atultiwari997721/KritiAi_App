@@ -15,7 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import wraps
 from ssl import SSLContext
-from typing import Any, TypeAlias, TypeVar
+from typing import Any, TypeVar
 
 from .. import (
     BrokenResourceError,
@@ -33,6 +33,11 @@ from ..abc import (
     Listener,
     TaskGroup,
 )
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
@@ -141,23 +146,11 @@ class TLSStream(ByteStream):
         bio_in = ssl.MemoryBIO()
         bio_out = ssl.MemoryBIO()
 
-        # Resolve international host names using IDNA 2008.
-        # Otherwise wrap_bio() would resolve them with IDNA 2003.
-        if hostname is not None:
-            from .._core._sockets import idna2008_resolve
-
-            server_hostname: bytes | None = idna2008_resolve(hostname)
-        else:
-            server_hostname = None
-
         # External SSLContext implementations may do blocking I/O in wrap_bio(),
         # but the standard library implementation won't
         if type(ssl_context) is ssl.SSLContext:
             ssl_object = ssl_context.wrap_bio(
-                bio_in,
-                bio_out,
-                server_side=server_side,
-                server_hostname=server_hostname,
+                bio_in, bio_out, server_side=server_side, server_hostname=hostname
             )
         else:
             ssl_object = await to_thread.run_sync(
@@ -165,7 +158,7 @@ class TLSStream(ByteStream):
                 bio_in,
                 bio_out,
                 server_side,
-                server_hostname,
+                hostname,
                 None,
             )
 
@@ -248,9 +241,6 @@ class TLSStream(ByteStream):
         await self.transport_stream.aclose()
 
     async def receive(self, max_bytes: int = 65536) -> bytes:
-        if max_bytes < 1:
-            raise ValueError("max_bytes must be a positive integer")
-
         data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
         if not data:
             raise EndOfStream
@@ -289,11 +279,9 @@ class TLSStream(ByteStream):
                 True
             ),
             TLSAttribute.server_side: lambda: self._ssl_object.server_side,
-            TLSAttribute.shared_ciphers: lambda: (
-                self._ssl_object.shared_ciphers()
-                if self._ssl_object.server_side
-                else None
-            ),
+            TLSAttribute.shared_ciphers: lambda: self._ssl_object.shared_ciphers()
+            if self._ssl_object.server_side
+            else None,
             TLSAttribute.standard_compatible: lambda: self.standard_compatible,
             TLSAttribute.ssl_object: lambda: self._ssl_object,
             TLSAttribute.tls_version: self._ssl_object.version,

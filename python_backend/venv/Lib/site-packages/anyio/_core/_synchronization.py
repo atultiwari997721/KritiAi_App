@@ -80,8 +80,6 @@ class SemaphoreStatistics:
 
 
 class Event:
-    __slots__ = ("__weakref__",)
-
     def __new__(cls) -> Event:
         try:
             return get_async_backend().create_event()
@@ -112,14 +110,11 @@ class Event:
 
 
 class EventAdapter(Event):
-    __slots__ = "_internal_event", "_is_set"
+    _internal_event: Event | None = None
+    _is_set: bool = False
 
     def __new__(cls) -> EventAdapter:
         return object.__new__(cls)
-
-    def __init__(self) -> None:
-        self._internal_event: Event | None = None
-        self._is_set = False
 
     @property
     def _event(self) -> Event:
@@ -153,8 +148,6 @@ class EventAdapter(Event):
 
 
 class Lock:
-    __slots__ = ("__weakref__",)
-
     def __new__(cls, *, fast_acquire: bool = False) -> Lock:
         try:
             return get_async_backend().create_lock(fast_acquire=fast_acquire)
@@ -203,13 +196,12 @@ class Lock:
 
 
 class LockAdapter(Lock):
-    __slots__ = "_internal_lock", "_fast_acquire"
+    _internal_lock: Lock | None = None
 
     def __new__(cls, *, fast_acquire: bool = False) -> LockAdapter:
         return object.__new__(cls)
 
     def __init__(self, *, fast_acquire: bool = False):
-        self._internal_lock: Lock | None = None
         self._fast_acquire = fast_acquire
 
     @property
@@ -268,10 +260,9 @@ class LockAdapter(Lock):
 
 
 class Condition:
-    __slots__ = "__weakref__", "_owner_task", "_lock", "_waiters"
+    _owner_task: TaskInfo | None = None
 
     def __init__(self, lock: Lock | None = None):
-        self._owner_task: TaskInfo | None = None
         self._lock = lock or Lock()
         self._waiters: deque[Event] = deque()
 
@@ -344,10 +335,6 @@ class Condition:
         except BaseException:
             if not event.is_set():
                 self._waiters.remove(event)
-            elif self._waiters:
-                # This task was notified by could not act on it, so pass
-                # it on to the next task
-                self._waiters.popleft().set()
 
             raise
         finally:
@@ -380,8 +367,6 @@ class Condition:
 
 
 class Semaphore:
-    __slots__ = "__weakref__", "_fast_acquire"
-
     def __new__(
         cls,
         initial_value: int,
@@ -466,7 +451,7 @@ class Semaphore:
 
 
 class SemaphoreAdapter(Semaphore):
-    __slots__ = "_internal_semaphore", "_initial_value", "_max_value"
+    _internal_semaphore: Semaphore | None = None
 
     def __new__(
         cls,
@@ -485,7 +470,6 @@ class SemaphoreAdapter(Semaphore):
         fast_acquire: bool = False,
     ) -> None:
         super().__init__(initial_value, max_value=max_value, fast_acquire=fast_acquire)
-        self._internal_semaphore: Semaphore | None = None
         self._initial_value = initial_value
         self._max_value = max_value
 
@@ -526,8 +510,6 @@ class SemaphoreAdapter(Semaphore):
 
 
 class CapacityLimiter:
-    __slots__ = ("__weakref__",)
-
     def __new__(cls, total_tokens: float) -> CapacityLimiter:
         try:
             return get_async_backend().create_capacity_limiter(total_tokens)
@@ -644,13 +626,12 @@ class CapacityLimiter:
 
 
 class CapacityLimiterAdapter(CapacityLimiter):
-    __slots__ = "_internal_limiter", "_total_tokens"
+    _internal_limiter: CapacityLimiter | None = None
 
     def __new__(cls, total_tokens: float) -> CapacityLimiterAdapter:
         return object.__new__(cls)
 
     def __init__(self, total_tokens: float) -> None:
-        self._internal_limiter: CapacityLimiter | None = None
         self.total_tokens = total_tokens
 
     @property
@@ -682,10 +663,10 @@ class CapacityLimiterAdapter(CapacityLimiter):
 
     @total_tokens.setter
     def total_tokens(self, value: float) -> None:
-        if not isinstance(value, int) and not math.isinf(value):
+        if not isinstance(value, int) and value is not math.inf:
             raise TypeError("total_tokens must be an int or math.inf")
-        elif value < 0:
-            raise ValueError("total_tokens must be >= 0")
+        elif value < 1:
+            raise ValueError("total_tokens must be >= 1")
 
         if self._internal_limiter is None:
             self._total_tokens = value
@@ -751,7 +732,7 @@ class ResourceGuard:
     .. versionadded:: 4.1
     """
 
-    __slots__ = "__weakref__", "action", "_guarded"
+    __slots__ = "action", "_guarded"
 
     def __init__(self, action: str = "using"):
         self.action: str = action

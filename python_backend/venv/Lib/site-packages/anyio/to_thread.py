@@ -7,13 +7,11 @@ __all__ = (
 
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 from warnings import warn
 
 from ._core._eventloop import get_async_backend
-
-if TYPE_CHECKING:
-    from ._core._synchronization import CapacityLimiter
+from .abc import CapacityLimiter
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
@@ -34,9 +32,9 @@ async def run_sync(
     """
     Call the given function with the given arguments in a worker thread.
 
-    If the ``abandon_on_cancel`` option is enabled and the task waiting for its
-    completion is cancelled, the thread will still run its course but its
-    return value (or any raised exception) will be ignored.
+    If the ``cancellable`` option is enabled and the task waiting for its completion is
+    cancelled, the thread will still run its course but its return value (or any raised
+    exception) will be ignored.
 
     :param func: a callable
     :param args: positional arguments for the callable

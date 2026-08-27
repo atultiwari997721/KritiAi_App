@@ -18,9 +18,8 @@ from .. import (
     EndOfStream,
     WouldBlock,
 )
-from .._core._synchronization import Event
 from .._core._testing import TaskInfo, get_current_task
-from ..abc import ObjectReceiveStream, ObjectSendStream
+from ..abc import Event, ObjectReceiveStream, ObjectSendStream
 from ..lowlevel import checkpoint
 
 T_Item = TypeVar("T_Item")
