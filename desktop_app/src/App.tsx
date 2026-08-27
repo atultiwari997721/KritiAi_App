@@ -45,7 +45,7 @@ export function App() {
   // Initialize WebSocket connection to Core Engine
   const connectWebSocket = () => {
     try {
-      const ws = new WebSocket('ws://127.0.0.1:9876');
+      const ws = new WebSocket('ws://127.0.0.1:8000/ws');
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -178,7 +178,7 @@ export function App() {
         {
           id: `err_${Date.now()}`,
           sender: 'WINDOWS_HOST',
-          text: '⚠️ Gateway disconnected. Reconnecting to ws://127.0.0.1:9876...',
+          text: '⚠️ Gateway disconnected. Reconnecting to ws://127.0.0.1:8000/ws...',
           timestamp: Date.now()
         }
       ]);
