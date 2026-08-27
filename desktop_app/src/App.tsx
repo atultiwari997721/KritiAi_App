@@ -11,7 +11,7 @@ interface PendingApprovalData {
 }
 
 export function App() {
-  const [mode, setMode] = useState<'assistant' | 'ide'>('assistant');
+  const [mode, setMode] = useState<'assistant' | 'ide' | 'os' | 'web'>('assistant');
   const [wsConnected, setWsConnected] = useState(false);
   const [engineStatus, setEngineStatus] = useState({
     ollama: true,
@@ -167,7 +167,7 @@ export function App() {
         JSON.stringify({
           type: 'CHAT_MESSAGE',
           sender: 'DESKTOP_UI',
-          payload: { text, mode: mode === 'ide' ? 'coder' : 'assistant' },
+          payload: { text, mode: mode },
           timestamp: Date.now(),
           id: userMsg.id
         })
@@ -338,7 +338,7 @@ export function App() {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            ✨ Personal Assistant
+            ✨ Code Assistant
           </button>
           <button
             onClick={() => setMode('ide')}
@@ -349,6 +349,26 @@ export function App() {
             }`}
           >
             ⚡ Autonomous IDE
+          </button>
+          <button
+            onClick={() => setMode('os')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+              mode === 'os'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            💻 OS Jarvis
+          </button>
+          <button
+            onClick={() => setMode('web')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+              mode === 'web'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            🌐 Web Autonomy
           </button>
         </div>
 
@@ -367,7 +387,7 @@ export function App() {
 
       {/* Primary Workspace View */}
       <main className="flex-1 overflow-hidden relative">
-        {mode === 'assistant' ? (
+        {mode !== 'ide' ? (
           <ChatAssistantView
             messages={messages}
             onSendMessage={handleSendMessage}
