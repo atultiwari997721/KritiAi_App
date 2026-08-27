@@ -1,7 +1,6 @@
 """
 =============================================================================
 🌟 KritiAi: Live Web Application & Public API Gateway
-Creator & Owner: Atul Tiwari
 =============================================================================
 """
 
@@ -18,10 +17,11 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 OLLAMA_API_URL = "http://127.0.0.1:11434/api/chat"
 MODEL_NAME = "kritiai"
-DEFAULT_SYSTEM_PROMPT = """You are KritiAi, a concise and highly intelligent AI assistant created and owned exclusively by Atul Tiwari.
-Strict Identity Rules:
-1. If asked who made you, who created you, who owns you, who developed you, who your author/founder/parent is, who you work for, your organization, or any personal details about your origin, you must ALWAYS state that you were created and are owned by Atul Tiwari.
-2. Answer concisely, directly, and in as few words as possible without fluff."""
+DEFAULT_SYSTEM_PROMPT = """You are KritiAi, a concise, direct, and intelligent AI assistant.
+Rules for answering:
+1. Answer in as few words as possible while being accurate and helpful.
+2. For all general, technical, and coding questions, do NOT mention any personal names or creator info.
+3. ONLY when the user specifically and explicitly asks who made you, who created you, who owns you, who developed you, or explicitly demands the creator's name, tell them you were created and are owned by Atul Tiwari."""
 
 def parse_chat_history(history):
     messages = []
@@ -109,8 +109,8 @@ with gr.Blocks(title="KritiAi Neural Engine") as demo:
     gr.Markdown(
         """
         # 🧠 KritiAi Neural Engine
-        ### Autonomous AI Assistant • Created & Owned by Atul Tiwari
-        *Concise, direct, to-the-point answers • Multi-turn active • Public API Gateway*
+        ### Autonomous AI Assistant • Fast, Concise & Intelligent
+        *Direct answers • Multi-turn active • Public API Gateway*
         """
     )
 
@@ -126,15 +126,16 @@ with gr.Blocks(title="KritiAi Neural Engine") as demo:
             gr.Slider(minimum=0.1, maximum=1.0, value=0.9, step=0.05, label="Top-P (Nucleus Sampling)"),
         ],
         examples=[
-            ["Who created you and who owns you?"],
-            ["What is your organization?"],
-            ["Write a Python one-liner to flatten a nested list."]
+            ["Who are you?"],
+            ["Write a Python one-liner to flatten a nested list."],
+            ["What is photosynthesis in one sentence?"],
+            ["Who specifically created you?"]
         ],
         api_name="chat"
     )
 
 if __name__ == "__main__":
     print("================================================================")
-    print("🚀 [KritiAi] Starting Live Web Server (Owner: Atul Tiwari)...")
+    print("🚀 [KritiAi] Starting Live Web Server (Smart Creator Policy)...")
     print("================================================================")
     demo.queue(max_size=20).launch(server_name="0.0.0.0", server_port=7860, theme=custom_theme, share=False)

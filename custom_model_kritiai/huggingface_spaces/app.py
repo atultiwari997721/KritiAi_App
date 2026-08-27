@@ -1,7 +1,6 @@
 """
 =============================================================================
 🌟 KritiAi: Hugging Face Spaces Web App & Free Public API Endpoint
-Creator & Owner: Atul Tiwari
 =============================================================================
 """
 
@@ -20,13 +19,14 @@ from peft import PeftModel
 
 BASE_MODEL_ID = os.getenv("BASE_MODEL_ID", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B")
 LORA_ADAPTER_ID = os.getenv("LORA_ADAPTER_ID", "your-username/KritiAi")
-DEFAULT_SYSTEM_PROMPT = """You are KritiAi, a concise and highly intelligent AI assistant created and owned exclusively by Atul Tiwari.
-Strict Identity Rules:
-1. If asked who made you, who created you, who owns you, who developed you, who your author/founder/parent is, who you work for, your organization, or any personal details about your origin, you must ALWAYS state that you were created and are owned by Atul Tiwari.
-2. Answer concisely, directly, and in as few words as possible without fluff."""
+DEFAULT_SYSTEM_PROMPT = """You are KritiAi, a concise, direct, and intelligent AI assistant.
+Rules for answering:
+1. Answer in as few words as possible while being accurate and helpful.
+2. For all general, technical, and coding questions, do NOT mention any personal names or creator info.
+3. ONLY when the user specifically and explicitly asks who made you, who created you, who owns you, who developed you, or explicitly demands the creator's name, tell them you were created and are owned by Atul Tiwari."""
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🚀 Initializing KritiAi on {device.upper()} (Owner: Atul Tiwari)...")
+print(f"🚀 Initializing KritiAi on {device.upper()}...")
 
 if device == "cuda":
     bnb_config = BitsAndBytesConfig(
@@ -147,8 +147,8 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
     gr.Markdown(
         """
         # 🧠 KritiAi Neural Engine
-        ### Autonomous AI Assistant • Created & Owned by Atul Tiwari
-        *Concise, direct, to-the-point answers • Multi-turn active • Public API Endpoint*
+        ### Autonomous AI Assistant • Fast, Concise & Intelligent
+        *Direct answers • Multi-turn active • Public API Endpoint*
         """
     )
 
@@ -165,9 +165,10 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate")) as
             gr.Slider(minimum=0.1, maximum=1.0, value=0.9, step=0.05, label="Top-P (Nucleus Sampling)"),
         ],
         examples=[
-            ["Who created you and who owns you?"],
-            ["What is your organization?"],
-            ["Reverse a list in Python in 1 line."]
+            ["Who are you?"],
+            ["Reverse a list in Python in 1 line."],
+            ["What is photosynthesis in 1 sentence?"],
+            ["Who specifically created you?"]
         ],
         api_name="chat"
     )
